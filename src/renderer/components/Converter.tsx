@@ -58,15 +58,15 @@ const Converter: React.FC = () => {
         InputProps={{ readOnly: true }} 
       />
       <Select
-  value={conversionType}
-  onChange={(e) => setConversionType(e.target.value as string)}
-  fullWidth
-  sx={{ mt: 2, mb: 2 }}  // This adds margin top and bottom
->
-  <MenuItem value="audio">Audio</MenuItem>
-  <MenuItem value="video">Video</MenuItem>
-  <MenuItem value="image">Image</MenuItem>
-</Select>
+      value={conversionType}
+      onChange={(e) => setConversionType(e.target.value as string)}
+      fullWidth
+      sx={{ mt: 2, mb: 2 }}  // This adds margin top and bottom
+    >
+      <MenuItem value="audio">Audio</MenuItem>
+      <MenuItem value="video">Video</MenuItem>
+      <MenuItem value="image">Image</MenuItem>
+    </Select>
       <TextField
         value={outputFormat}
         onChange={(e) => setOutputFormat(e.target.value)}
