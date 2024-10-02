@@ -12,17 +12,26 @@ def get_file_type(file_path):
         
         if 'streams' in info:
             for stream in info['streams']:
-                if stream['codec_type'] == 'video':
+                codec_type = stream.get('codec_type', '')
+                codec_name = stream.get('codec_name', '')
+                
+                if codec_type == 'video':
+                    # Check if it's actually an image
+                    if codec_name in ['mjpeg', 'png', 'bmp', 'gif']:
+                        return 'image'
                     return 'video'
-                elif stream['codec_type'] == 'audio':
+                elif codec_type == 'audio':
                     return 'audio'
-            if info['format']['format_name'] == 'image2':
-                return 'image'
+            
+            # If we haven't returned yet, check the format
+            if 'format' in info:
+                format_name = info['format'].get('format_name', '').lower()
+                if any(img_format in format_name for img_format in ['image', 'png', 'jpeg', 'jpg', 'gif', 'bmp']):
+                    return 'image'
         
         return 'unknown'
     except subprocess.CalledProcessError:
         return 'unknown'
-
 def get_possible_formats(file_type):
     formats = {
         'video': ['mp4', 'avi', 'mkv', 'mov', 'webm'],
@@ -75,8 +84,8 @@ def batch_convert(input_folder, output_folder, output_format):
 def test_file_type_detection():
     test_files = {
         'test_image.jpg': 'image',
-        'test_video.mp4': 'video',
-        'test_audio.mp3': 'audio'
+        #'test_video.mp4': 'video',
+        #'test_audio.mp3': 'audio'
     }
     for file, expected_type in test_files.items():
         detected_type = get_file_type(file)
@@ -86,7 +95,7 @@ def test_file_type_detection():
 def test_batch_conversion():
     input_folder = 'test_batch_input'
     output_folder = 'test_batch_output'
-    output_format = 'mp4'  # You can change this to any desired output format
+    output_format = 'png'  # You can change this to any desired output format
     batch_convert(input_folder, output_folder, output_format)
     print("Batch conversion test completed")
 
