@@ -1,0 +1,9 @@
+{
+    "python.defaultInterpreterPath": "d:\\Programs\\Universal File Converter\\unicon\\.venv\\Scripts\\python.exe",
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": [
+        "."
+    ],
+    "python.testing.autoTestDiscoverOnSaveEnabled": true
+}
