@@ -169,6 +169,7 @@ ai-digest-output/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
 # Logs
 logs
 *.log
@@ -199,3 +200,10 @@ npm-debug.log.*
 *.sass.d.ts
 *.scss.d.ts
 .venv/
+
+# Ignore test folder
+tests/
+tests/**/*
+# VSCode
+.vscode/
+*.code-workspace
