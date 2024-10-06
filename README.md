@@ -1,19 +1,30 @@
 # Media Converter
 
-This project provides a set of Python functions for converting various media files (audio, video, and images) using the ffmpeg-python library. It allows for easy conversion between different formats and optional resizing for videos and images.
+This project provides a set of Python functions for converting various media files (audio, video, and images) using the ffmpeg-python library. It allows for easy conversion between different formats and includes batch processing capabilities.
 
 ## Features
 
-- Convert audio files between different formats (e.g., mp3, wav, ogg, flac)
-- Convert video files between different formats (e.g., mp4, avi, mov, mkv) with optional resizing
-- Convert image files between different formats (e.g., jpg, png, bmp, tiff) with optional resizing
+- Convert audio files between different formats (e.g., mp3, wav, ogg, flac, m4a)
+- Convert video files between different formats (e.g., mp4, avi, mov, mkv, webm)
+- Convert image files between different formats (e.g., jpg, png, gif, bmp, webp)
 - Batch processing for folders containing multiple files
+- Real-time progress tracking for individual and batch conversions
+- Asynchronous processing for improved performance
+- Generate waveform images from audio files
+- Extract first frame from video files as an image
+
+## Supported File Types
+
+- Image: jpg, png, gif, bmp, webp
+- Audio: mp3, wav, ogg, flac, m4a
+- Video: mp4, avi, mkv, mov, webm
 
 ## Requirements
 
 - Python 3.6+
 - ffmpeg-python
 - FFmpeg (must be installed and accessible in your system's PATH)
+- Pillow (PIL)
 
 ## Installation
 
@@ -23,54 +34,53 @@ This project provides a set of Python functions for converting various media fil
    cd media-converter
    ```
 
-2. Install the required Python package:
+2. Install the required Python packages:
    ```
-   pip install ffmpeg-python
+   pip install ffmpeg-python Pillow
    ```
 
 3. Ensure FFmpeg is installed on your system and accessible via the command line.
 
 ## Usage
 
-### Converting Audio
+### Converting Files
 
 ```python
-from media_conversion import convert_audio
+import asyncio
+from media_conversion import convert_file, batch_convert
 
-# Convert a single audio file
-convert_audio("/path/to/audio.mp3", "ogg", "/path/to/output/folder")
+# Convert a single file
+asyncio.run(convert_file("/path/to/input.mp3", "/path/to/output.ogg", "ogg"))
 
-# Convert all audio files in a folder
-convert_audio("/path/to/audio/folder", "wav", "/path/to/output/folder")
+# Batch convert files in a folder
+asyncio.run(batch_convert("/path/to/input/folder", "/path/to/output/folder", "png"))
 ```
 
-### Converting Video
+### Progress Tracking
 
 ```python
-from media_conversion import convert_video
+import asyncio
+from media_conversion import convert_file
 
-# Convert a single video file and resize to 720p
-convert_video("/path/to/video.mp4", "avi", "/path/to/output/folder", resolution=(1280, 720))
+async def progress_callback(progress):
+    print(f"Conversion progress: {progress:.2%}")
 
-# Convert all video files in a folder
-convert_video("/path/to/video/folder", "mp4", "/path/to/output/folder")
+asyncio.run(convert_file("/path/to/input.mp4", "/path/to/output.avi", "avi", progress_callback))
 ```
 
-### Converting Images
+## Special Conversions
 
-```python
-from media_conversion import convert_image
-
-# Convert a single image file and resize to 800x600
-convert_image("/path/to/image.jpg", "png", "/path/to/output/folder", resize=(800, 600))
-
-# Convert all image files in a folder
-convert_image("/path/to/image/folder", "webp", "/path/to/output/folder")
-```
+- Audio to Image: Generates a waveform visualization as a PNG image
+- Video to Image: Extracts the first frame of the video as a PNG image
 
 ## Error Handling
 
-The script includes basic error handling. If an error occurs during conversion, it will be printed to the console, and the script will continue with the next file (if processing multiple files).
+The script includes error handling and logging. If an error occurs during conversion, it will be logged, and the script will continue with the next file (if processing multiple files).
+
+## Limitations
+
+- Direct conversions between fundamentally different media types (e.g., image to audio) are not supported
+- Some advanced conversion options (e.g., video quality settings, audio bitrate) are not currently implemented
 
 ## Contributing
 
@@ -83,3 +93,4 @@ This project is open source and available under the [MIT License](LICENSE).
 ## Acknowledgments
 
 - This project uses the [ffmpeg-python](https://github.com/kkroening/ffmpeg-python) library, which provides Python bindings for FFmpeg.
+- [Pillow (PIL)](https://python-pillow.org/) is used for some image processing tasks.
