@@ -1,6 +1,6 @@
-# Media Converter
+# Unicon: Universal File Converter
 
-This project provides a set of Python functions for converting various media files (audio, video, and images) using the ffmpeg-python library. It allows for easy conversion between different formats and includes batch processing capabilities.
+Unicon is a versatile file conversion tool that combines a powerful Python backend with a user-friendly Electron frontend. It provides a set of functions for converting various media files (audio, video, and images) using the ffmpeg-python library, allowing for easy conversion between different formats and including batch processing capabilities.
 
 ## Features
 
@@ -12,6 +12,7 @@ This project provides a set of Python functions for converting various media fil
 - Asynchronous processing for improved performance
 - Generate waveform images from audio files
 - Extract first frame from video files as an image
+- User-friendly Electron-based desktop application
 
 ## Supported File Types
 
@@ -21,6 +22,7 @@ This project provides a set of Python functions for converting various media fil
 
 ## Requirements
 
+- Node.js 14+
 - Python 3.6+
 - ffmpeg-python
 - FFmpeg (must be installed and accessible in your system's PATH)
@@ -29,58 +31,58 @@ This project provides a set of Python functions for converting various media fil
 ## Installation
 
 1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/media-converter.git
-   cd media-converter
-   ```
+   git clone https://github.com/yourusername/unicon.git
+   cd unicon
 
-2. Install the required Python packages:
-   ```
+2. Install the required Node.js packages:
+   npm install
+
+3. Install the required Python packages:
    pip install ffmpeg-python Pillow
-   ```
 
-3. Ensure FFmpeg is installed on your system and accessible via the command line.
+4. Ensure FFmpeg is installed on your system and accessible via the command line.
 
 ## Usage
 
-### Converting Files
+### Running the Desktop Application
 
-```python
+To start the Electron application:
+
+npm start
+
+### Using the Python Backend Directly
+
+If you want to use the Python backend directly:
+
 import asyncio
-from media_conversion import convert_file, batch_convert
+from conversion_functions.media_conversion import convert_file, batch_convert
 
 # Convert a single file
 asyncio.run(convert_file("/path/to/input.mp3", "/path/to/output.ogg", "ogg"))
 
 # Batch convert files in a folder
 asyncio.run(batch_convert("/path/to/input/folder", "/path/to/output/folder", "png"))
-```
 
-### Progress Tracking
+## Development
 
-```python
-import asyncio
-from media_conversion import convert_file
+- Backend: The Python backend code is located in the `conversion_functions` directory.
+- Frontend: The Electron frontend code is in the `src` directory.
 
-async def progress_callback(progress):
-    print(f"Conversion progress: {progress:.2%}")
+To run the application in development mode:
 
-asyncio.run(convert_file("/path/to/input.mp4", "/path/to/output.avi", "avi", progress_callback))
-```
+npm run dev
 
-## Special Conversions
+## Building
 
-- Audio to Image: Generates a waveform visualization as a PNG image
-- Video to Image: Extracts the first frame of the video as a PNG image
+To build the desktop application:
 
-## Error Handling
+npm run package
 
-The script includes error handling and logging. If an error occurs during conversion, it will be logged, and the script will continue with the next file (if processing multiple files).
+## Testing
 
-## Limitations
+Run the test suite:
 
-- Direct conversions between fundamentally different media types (e.g., image to audio) are not supported
-- Some advanced conversion options (e.g., video quality settings, audio bitrate) are not currently implemented
+npm test
 
 ## Contributing
 
@@ -92,5 +94,6 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ## Acknowledgments
 
-- This project uses the [ffmpeg-python](https://github.com/kkroening/ffmpeg-python) library, which provides Python bindings for FFmpeg.
+- This project uses the [ffmpeg-python](https://github.com/kkroening/ffmpeg-python) library for media conversions.
+- [Electron React Boilerplate](https://electron-react-boilerplate.js.org/) was used as a starting point for the desktop application.
 - [Pillow (PIL)](https://python-pillow.org/) is used for some image processing tasks.
