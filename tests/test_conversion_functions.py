@@ -3,9 +3,15 @@ import os
 import shutil
 from PIL import Image
 import subprocess
-import time
+import asyncio
 import psutil
+import logging
 from conversion_functions.media_conversion import get_file_type, get_possible_formats, convert_file, batch_convert
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 
 def kill_ffmpeg_processes():
     for proc in psutil.process_iter(['name']):
@@ -92,31 +98,34 @@ class TestMediaConversion(unittest.TestCase):
 
     def test_convert_file(self):
         output_path = os.path.join(self.test_output_dir, 'output.png')
-        result = convert_file(self.test_image, output_path)
-        print(f"Conversion result: {result}")
-        print(f"Output file exists: {os.path.exists(output_path)}")
+        result = asyncio.run(convert_file(self.test_image, output_path, 'png'))
+        logger.debug(f"Conversion result: {result}")
+        logger.debug(f"Output file exists: {os.path.exists(output_path)}")
         self.assertTrue(result)
         self.assertTrue(os.path.exists(output_path))
 
     def test_batch_convert(self):
-        batch_convert(self.test_input_dir, self.test_output_dir, 'png')
+        success_count, total_count = asyncio.run(batch_convert(self.test_input_dir, self.test_output_dir, 'png'))
         expected_output = os.path.join(self.test_output_dir, 'test_image.png')
-        print(f"Expected output path: {expected_output}")
-        print(f"Output file exists: {os.path.exists(expected_output)}")
+        logger.debug(f"Expected output path: {expected_output}")
+        logger.debug(f"Output file exists: {os.path.exists(expected_output)}")
+        logger.debug(f"Success count: {success_count}, Total count: {total_count}")
         self.assertTrue(os.path.exists(expected_output))
+        self.assertEqual(success_count, total_count)
 
     def test_convert_file_with_progress(self):
         output_path = os.path.join(self.test_output_dir, 'output.png')
         progress_values = []
 
-        def progress_callback(progress):
+        async def progress_callback(progress):
             progress_values.append(progress)
+            logger.debug(f"Progress: {progress}")
 
-        result = convert_file(self.test_image, output_path, progress_callback)
+        result = asyncio.run(convert_file(self.test_image, output_path, 'png', progress_callback))
 
-        print(f"Conversion result: {result}")
-        print(f"Output file exists: {os.path.exists(output_path)}")
-        print(f"Progress values: {progress_values}")
+        logger.debug(f"Conversion result: {result}")
+        logger.debug(f"Output file exists: {os.path.exists(output_path)}")
+        logger.debug(f"Progress values: {progress_values}")
 
         self.assertTrue(result)
         self.assertTrue(os.path.exists(output_path))
@@ -128,10 +137,11 @@ class TestMediaConversion(unittest.TestCase):
     def test_batch_convert_with_progress(self):
         progress_values = []
 
-        def progress_callback(progress):
+        async def progress_callback(progress):
             progress_values.append(progress)
+            logger.debug(f"Progress: {progress}")
 
-        batch_convert(self.test_input_dir, self.test_output_dir, 'png', progress_callback)
+        success_count, total_count = asyncio.run(batch_convert(self.test_input_dir, self.test_output_dir, 'png', progress_callback))
 
         expected_outputs = [
             os.path.join(self.test_output_dir, 'test_image.png'),
@@ -140,16 +150,18 @@ class TestMediaConversion(unittest.TestCase):
         ]
 
         for output_path in expected_outputs:
-            print(f"Expected output path: {output_path}")
-            print(f"Output file exists: {os.path.exists(output_path)}")
+            logger.debug(f"Expected output path: {output_path}")
+            logger.debug(f"Output file exists: {os.path.exists(output_path)}")
 
-        print(f"Progress values: {progress_values}")
+        logger.debug(f"Progress values: {progress_values}")
+        logger.debug(f"Success count: {success_count}, Total count: {total_count}")
 
         self.assertTrue(any(os.path.exists(path) for path in expected_outputs), "No output files were created")
         self.assertGreater(len(progress_values), 0, "No progress values were recorded")
         if len(progress_values) > 1:
             self.assertGreater(progress_values[-1], progress_values[0], "Progress did not increase")
         self.assertLessEqual(progress_values[-1], 1.0, "Progress exceeded 100%")
+        self.assertEqual(success_count, total_count, "Not all files were successfully converted")
 
 if __name__ == '__main__':
     unittest.main()

@@ -2,7 +2,7 @@ import os
 import magic
 import ffmpeg
 import logging
-import subprocess
+import asyncio
 import time
 from collections import defaultdict
 
@@ -35,10 +35,13 @@ def get_possible_formats(file_type):
     }
     return formats.get(file_type, [])
 
-def get_media_duration(input_path):
+async def get_media_duration(input_path):
     try:
-        probe = ffmpeg.probe(input_path)
-        # Look for duration in both container and stream metadata
+        file_type = get_file_type(input_path)
+        if file_type == 'image':
+            return 1  # Return 1 for images as they don't have a duration
+        
+        probe = await asyncio.to_thread(ffmpeg.probe, input_path)
         duration = next(
             (
                 float(format_or_stream.get('duration', 0))
@@ -55,52 +58,73 @@ def get_media_duration(input_path):
         logger.error(f"Error probing file duration for {input_path}: {e.stderr.decode()}")
         return 1
 
-def convert_file(input_path, output_path, progress_callback=None):
+async def convert_file(input_path, output_path, output_format, progress_callback=None):
     try:
-        total_duration = get_media_duration(input_path)
+        total_duration = await get_media_duration(input_path)
+        
+        file_type = get_file_type(input_path)
+        
+        if file_type == 'image' and output_format == 'png':
+            # For image to PNG conversion, use PIL instead of FFmpeg
+            from PIL import Image
+            with Image.open(input_path) as img:
+                img.save(output_path, 'PNG')
+            logger.info(f"Converted {input_path} to {output_path}")
+            if progress_callback:
+                await progress_callback(1.0)
+            return True
         
         cmd = [
             'ffmpeg',
             '-i', input_path,
             '-progress', 'pipe:1',
-            '-nostats',
-            output_path
+            '-nostats'
         ]
         
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True
+        if file_type == 'video' and output_format == 'png':
+            # For video to PNG, extract the first frame
+            cmd.extend(['-vframes', '1'])
+        elif file_type == 'audio' and output_format == 'png':
+            # For audio to PNG, generate a waveform image
+            cmd.extend(['-filter_complex', 'showwavespic=s=640x120'])
+        
+        cmd.append(output_path)
+        
+        logger.debug(f"Running FFmpeg command: {' '.join(cmd)}")
+        
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
         )
         
         start_time = time.time()
         last_progress = 0
         
         while True:
-            output = process.stdout.readline()
-            if output == '' and process.poll() is not None:
+            line = await process.stdout.readline()
+            if not line:
                 break
-            if output:
-                if 'out_time_ms=' in output:
-                    time_ms = int(output.split('=')[1])
-                    progress = min((time_ms / 1000000) / total_duration, 1) if total_duration > 0 else 0
-                    if progress > last_progress:
-                        last_progress = progress
-                        if progress_callback:
-                            progress_callback(progress)
+            line = line.decode('utf-8').strip()
+            logger.debug(f"FFmpeg output: {line}")
+            if 'out_time_ms=' in line:
+                time_ms = int(line.split('=')[1])
+                progress = min((time_ms / 1000000) / total_duration, 1) if total_duration > 0 else 0
+                if progress > last_progress:
+                    last_progress = progress
+                    if progress_callback:
+                        await progress_callback(progress)
             
-            # Ensure we're not stuck in an infinite loop
             if time.time() - start_time > 30:  # Timeout after 30 seconds
                 process.kill()
                 logger.error(f"Conversion timed out for {input_path}")
                 return False
         
-        process.wait()  # Wait for the process to finish
+        await process.wait()
         
         if process.returncode != 0:
-            stderr_output = process.stderr.read()
-            logger.error(f"Error converting {input_path}: FFmpeg process returned {process.returncode}. stderr: {stderr_output}")
+            stderr_output = await process.stderr.read()
+            logger.error(f"Error converting {input_path}: FFmpeg process returned {process.returncode}. stderr: {stderr_output.decode('utf-8')}")
             return False
         
         logger.info(f"Converted {input_path} to {output_path}")
@@ -109,7 +133,7 @@ def convert_file(input_path, output_path, progress_callback=None):
         logger.exception(f"Unexpected error converting {input_path}: {str(e)}")
         return False
 
-def batch_convert(input_folder, output_folder, output_format, progress_callback=None):
+async def batch_convert(input_folder, output_folder, output_format, progress_callback=None):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     
@@ -121,38 +145,40 @@ def batch_convert(input_folder, output_folder, output_format, progress_callback=
         files = [f for f in os.listdir(input_folder) if os.path.isfile(os.path.join(input_folder, f))]
         total_files = len(files)
         
-        for i, filename in enumerate(files):
+        async def convert_single_file(i, filename):
             input_path = os.path.join(input_folder, filename)
             file_type = get_file_type(input_path)
             file_types[file_type] += 1
             
-            if file_type != 'unknown':
-                output_filename = os.path.splitext(filename)[0] + '.' + output_format
-                output_path = os.path.join(output_folder, output_filename)
-                
-                def file_progress_callback(file_progress):
-                    if progress_callback:
-                        overall_progress = (i + file_progress) / total_files
-                        progress_callback(overall_progress)
-                
-                if convert_file(input_path, output_path, file_progress_callback):
-                    success_count += 1
-                total_count += 1
-            else:
-                logger.warning(f"Skipping file {filename}: Unsupported file type")
+            output_filename = os.path.splitext(filename)[0] + '.' + output_format
+            output_path = os.path.join(output_folder, output_filename)
+            
+            async def file_progress_callback(file_progress):
+                if progress_callback:
+                    overall_progress = (i + file_progress) / total_files
+                    await progress_callback(overall_progress)
+            
+            return await convert_file(input_path, output_path, output_format, file_progress_callback)
+        
+        tasks = [convert_single_file(i, filename) for i, filename in enumerate(files)]
+        results = await asyncio.gather(*tasks)
+        
+        success_count = sum(1 for result in results if result)
+        total_count = len(results)
         
         logger.info(f"Batch conversion complete. Successfully converted {success_count} out of {total_count} files.")
         logger.info(f"File types in folder: {dict(file_types)}")
     except Exception as e:
         logger.error(f"Error during batch conversion: {str(e)}")
+    
+    return success_count, total_count
 
 if __name__ == "__main__":
-    # Example usage
-    def print_progress(progress):
+    async def print_progress(progress):
         print(f"Conversion progress: {progress:.2%}")
     
     input_folder = "path/to/input/folder"
     output_folder = "path/to/output/folder"
     output_format = "mp4"
     
-    batch_convert(input_folder, output_folder, output_format, print_progress)
+    asyncio.run(batch_convert(input_folder, output_folder, output_format, print_progress))
