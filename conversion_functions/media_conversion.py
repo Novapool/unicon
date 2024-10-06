@@ -4,6 +4,7 @@ import ffmpeg
 import logging
 import asyncio
 import time
+import sys
 from collections import defaultdict
 
 # Set up logging
@@ -173,12 +174,49 @@ async def batch_convert(input_folder, output_folder, output_format, progress_cal
     
     return success_count, total_count
 
+async def main(input_path, output_format):
+    try:
+        file_type = get_file_type(input_path)
+        if file_type == 'unknown':
+            print(f"Error: Unable to determine file type for {input_path}")
+            return False
+
+        if output_format not in get_possible_formats(file_type):
+            print(f"Error: Invalid output format {output_format} for {file_type} file")
+            return False
+
+        output_filename = f"{os.path.splitext(os.path.basename(input_path))[0]}.{output_format}"
+        output_path = os.path.join(os.path.dirname(input_path), output_filename)
+
+        async def progress_callback(progress):
+            print(f"Conversion progress: {progress:.2%}")
+
+        result = await convert_file(input_path, output_path, output_format, progress_callback)
+        
+        if result:
+            print(f"Successfully converted {input_path} to {output_path}")
+            return True
+        else:
+            print(f"Failed to convert {input_path} to {output_format}")
+            return False
+
+    except Exception as e:
+        logger.exception(f"Error during conversion: {str(e)}")
+        print(f"Error during conversion: {str(e)}")
+        return False
+
+# Update the if __name__ == "__main__" block at the end of the file
 if __name__ == "__main__":
-    async def print_progress(progress):
-        print(f"Conversion progress: {progress:.2%}")
-    
-    input_folder = "path/to/input/folder"
-    output_folder = "path/to/output/folder"
-    output_format = "mp4"
-    
-    asyncio.run(batch_convert(input_folder, output_folder, output_format, print_progress))
+    if len(sys.argv) != 3:
+        print("Usage: python media_conversion.py <input_file> <output_format>")
+        sys.exit(1)
+
+    input_file = sys.argv[1]
+    output_format = sys.argv[2]
+
+    if not os.path.exists(input_file):
+        print(f"Error: Input file {input_file} does not exist")
+        sys.exit(1)
+
+    success = asyncio.run(main(input_file, output_format))
+    sys.exit(0 if success else 1)
