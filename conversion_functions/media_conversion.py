@@ -11,6 +11,41 @@ from collections import defaultdict
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# FFmpeg binary path (will be set from environment or bundled location)
+FFMPEG_BINARY = os.environ.get('FFMPEG_PATH', 'ffmpeg')
+
+
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and PyInstaller bundle"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+
+    return os.path.join(base_path, relative_path)
+
+
+def set_ffmpeg_binary():
+    """Set FFmpeg binary path based on bundled binary or system installation"""
+    global FFMPEG_BINARY
+
+    # Try to find bundled FFmpeg first
+    if sys.platform == 'win32':
+        bundled_ffmpeg = get_resource_path('../ffmpeg/ffmpeg.exe')
+    else:
+        bundled_ffmpeg = get_resource_path('../ffmpeg/ffmpeg')
+
+    if os.path.exists(bundled_ffmpeg):
+        FFMPEG_BINARY = bundled_ffmpeg
+        logger.info(f"Using bundled FFmpeg at: {FFMPEG_BINARY}")
+    else:
+        logger.info("Using system FFmpeg from PATH")
+
+
+# Initialize FFmpeg path on module import
+set_ffmpeg_binary()
+
 def get_file_type(file_path):
     try:
         mime = magic.Magic(mime=True)
@@ -76,7 +111,7 @@ async def convert_file(input_path, output_path, output_format, progress_callback
             return True
         
         cmd = [
-            'ffmpeg',
+            FFMPEG_BINARY,
             '-i', input_path,
             '-progress', 'pipe:1',
             '-nostats'

@@ -1,18 +1,27 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { ElectronAPI } from '../types/ipc';
 
-contextBridge.exposeInMainWorld('electron', {
-  ipcRenderer: {
-    invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
-    on: (channel: string, func: (...args: any[]) => void) => {
-      const subscription = (_event: any, ...args: any[]) => func(...args);
-      ipcRenderer.on(channel, subscription);
-      return () => ipcRenderer.removeListener(channel, subscription);
-    },
-    once: (channel: string, func: (...args: any[]) => void) => {
-      ipcRenderer.once(channel, (_event, ...args) => func(...args));
-    },
-    removeListener: (channel: string, func: (...args: any[]) => void) => {
-      ipcRenderer.removeListener(channel, func);
-    },
-  },
-});
+const electronAPI: ElectronAPI = {
+  // File dialogs
+  openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
+  openFolderDialog: () => ipcRenderer.invoke('dialog:openFolder'),
+  saveFileDialog: (defaultPath?: string) => ipcRenderer.invoke('dialog:saveFile', defaultPath),
+
+  // File type detection
+  detectFileType: (filePath: string) => ipcRenderer.invoke('detect-file-type', filePath),
+
+  // Format information
+  getFormats: () => ipcRenderer.invoke('get-formats'),
+
+  // Conversion operations
+  convertFile: (inputPath: string, outputPath: string, outputFormat: string) =>
+    ipcRenderer.invoke('convert-file', inputPath, outputPath, outputFormat),
+
+  batchConvert: (inputFolder: string, outputFolder: string, outputFormat: string) =>
+    ipcRenderer.invoke('batch-convert', inputFolder, outputFolder, outputFormat),
+
+  // Job status
+  getJobStatus: (jobId: string) => ipcRenderer.invoke('get-job-status', jobId),
+};
+
+contextBridge.exposeInMainWorld('electron', electronAPI);
