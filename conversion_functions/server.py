@@ -89,12 +89,10 @@ def health_check():
 def get_formats():
     """Get all supported formats organized by type"""
     return jsonify({
-        'media': {
-            'video': get_possible_formats('video'),
-            'audio': get_possible_formats('audio'),
-            'image': get_possible_formats('image')
-        },
-        'documents': get_document_formats()
+        'video': get_possible_formats('video'),
+        'audio': get_possible_formats('audio'),
+        'image': get_possible_formats('image'),
+        'document': list(get_document_formats().keys())
     })
 
 
