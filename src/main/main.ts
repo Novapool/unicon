@@ -37,7 +37,8 @@ function getResourcePath(...paths: string[]): string {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, ...paths);
   }
-  return path.join(__dirname, '..', '..', '..', ...paths);
+  // In development, __dirname is .erb/dll, so go up 2 levels to reach project root
+  return path.join(__dirname, '..', '..', ...paths);
 }
 
 // Start Python Flask server

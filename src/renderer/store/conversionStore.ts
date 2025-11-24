@@ -14,12 +14,14 @@ interface ConversionFile {
   id: string;
   path: string;
   name: string;
-  type?: FileTypeInfo;
+  type: string;
+  size: number;
   outputPath?: string;
   outputFormat?: string;
   jobId?: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   progress: number;
+  message?: string;
   error?: string;
 }
 
@@ -53,8 +55,10 @@ interface ConversionState {
   updateFile: (fileId: string, updates: Partial<ConversionFile>) => void;
   updateFileProgress: (fileId: string, progress: ProgressUpdate) => void;
 
+  setCurrentFileId: (fileId: string | null) => void;
   setCurrentFile: (fileId: string | null) => void;
 
+  toggleBatchMode: (enabled: boolean) => void;
   setBatchMode: (enabled: boolean) => void;
   setInputFolder: (folder: string | null) => void;
   setOutputFolder: (folder: string | null) => void;
@@ -63,10 +67,14 @@ interface ConversionState {
   setDefaultOutputFormat: (format: string) => void;
   setDefaultOutputFolder: (folder: string | null) => void;
 
+  clearCompletedFiles: () => void;
+  clearFailedFiles: () => void;
+
   // Computed
   getFile: (fileId: string) => ConversionFile | undefined;
   getFilesWithStatus: (status: ConversionFile['status']) => ConversionFile[];
   getTotalProgress: () => number;
+  totalProgress: number;
 }
 
 export const useConversionStore = create<ConversionState>((set, get) => ({
@@ -121,18 +129,21 @@ export const useConversionStore = create<ConversionState>((set, get) => ({
         f.id === fileId
           ? {
               ...f,
-              status: progressUpdate.status as ConversionFile['status'],
-              progress: progressUpdate.progress,
-              error: progressUpdate.error,
+              status: (progressUpdate.status || f.status) as ConversionFile['status'],
+              progress: progressUpdate.progress !== undefined ? progressUpdate.progress : f.progress,
+              message: progressUpdate.message || f.message,
+              error: progressUpdate.error || f.error,
             }
           : f
       ),
     }));
   },
 
+  setCurrentFileId: (fileId) => set({ currentFileId: fileId }),
   setCurrentFile: (fileId) => set({ currentFileId: fileId }),
 
   // Batch actions
+  toggleBatchMode: (enabled) => set({ isBatchMode: enabled }),
   setBatchMode: (enabled) => set({ isBatchMode: enabled }),
   setInputFolder: (folder) => set({ inputFolder: folder }),
   setOutputFolder: (folder) => set({ outputFolder: folder }),
@@ -141,6 +152,19 @@ export const useConversionStore = create<ConversionState>((set, get) => ({
   // Settings actions
   setDefaultOutputFormat: (format) => set({ defaultOutputFormat: format }),
   setDefaultOutputFolder: (folder) => set({ defaultOutputFolder: folder }),
+
+  // Clear completed/failed files
+  clearCompletedFiles: () => {
+    set((state) => ({
+      files: state.files.filter((f) => f.status !== 'completed'),
+    }));
+  },
+
+  clearFailedFiles: () => {
+    set((state) => ({
+      files: state.files.filter((f) => f.status !== 'failed'),
+    }));
+  },
 
   // Computed getters
   getFile: (fileId) => {
@@ -152,6 +176,13 @@ export const useConversionStore = create<ConversionState>((set, get) => ({
   },
 
   getTotalProgress: () => {
+    const { files } = get();
+    if (files.length === 0) return 0;
+    const total = files.reduce((sum, file) => sum + file.progress, 0);
+    return total / files.length;
+  },
+
+  get totalProgress() {
     const { files } = get();
     if (files.length === 0) return 0;
     const total = files.reduce((sum, file) => sum + file.progress, 0);

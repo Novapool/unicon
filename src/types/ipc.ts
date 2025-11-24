@@ -10,7 +10,7 @@ export interface FileDialogResponse {
 
 export interface FolderDialogResponse {
   canceled: boolean;
-  folderPath?: string;
+  filePaths: string[];
 }
 
 export interface SaveFileDialogResponse {
@@ -27,6 +27,7 @@ export interface FileTypeInfo {
 
 export interface FileTypeResponse {
   success: boolean;
+  fileType: string;
   data?: FileTypeInfo;
   error?: string;
 }
@@ -43,8 +44,10 @@ export interface DocumentFormats {
 }
 
 export interface FormatsData {
-  media: MediaFormats;
-  documents: DocumentFormats;
+  video: string[];
+  audio: string[];
+  image: string[];
+  document: string[];
 }
 
 export interface FormatsResponse {
@@ -57,6 +60,7 @@ export interface FormatsResponse {
 export interface ConversionJob {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   progress: number;
+  message?: string;
   input_path?: string;
   output_path?: string;
   output_format?: string;
@@ -68,6 +72,7 @@ export interface ConversionJob {
 export interface ConversionResponse {
   success: boolean;
   jobId?: string;
+  message?: string;
   error?: string;
 }
 
@@ -79,9 +84,9 @@ export interface JobStatusResponse {
 
 // Progress updates
 export interface ProgressUpdate {
-  status: 'processing' | 'completed' | 'failed';
-  progress: number;
-  message: string;
+  status?: 'processing' | 'completed' | 'failed';
+  progress?: number;
+  message?: string;
   error?: string;
   output_path?: string;
   success_count?: number;
