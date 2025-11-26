@@ -2,7 +2,13 @@ import { useEffect, useMemo } from 'react';
 import { useConversionStore } from '../store/conversionStore';
 
 export default function FormatSelector() {
-  const { formats, files, defaultOutputFormat, setDefaultOutputFormat, setFormats } = useConversionStore();
+  const {
+    formats,
+    files,
+    defaultOutputFormat,
+    setDefaultOutputFormat,
+    setFormats,
+  } = useConversionStore();
 
   useEffect(() => {
     const fetchFormats = async () => {
@@ -38,6 +44,7 @@ export default function FormatSelector() {
     } else if (firstFileType.startsWith('image/')) {
       category = 'image';
     } else if (
+      firstFileType.startsWith('document/') ||
       firstFileType.includes('pdf') ||
       firstFileType.includes('document') ||
       firstFileType.includes('spreadsheet') ||
@@ -71,8 +78,8 @@ export default function FormatSelector() {
     return (
       <div className="card">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="h-12 bg-gray-200 rounded"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4" />
+          <div className="h-12 bg-gray-200 rounded" />
         </div>
       </div>
     );
@@ -134,7 +141,8 @@ export default function FormatSelector() {
         {files.length > 0 && defaultOutputFormat && (
           <div className="mt-3 p-3 bg-primary-50 rounded-lg">
             <p className="text-sm text-primary-700">
-              <span className="font-semibold">Selected:</span> {defaultOutputFormat.toUpperCase()}
+              <span className="font-semibold">Selected:</span>{' '}
+              {defaultOutputFormat.toUpperCase()}
             </p>
             {availableFormats.includes(defaultOutputFormat) && (
               <p className="text-xs text-primary-600 mt-1">

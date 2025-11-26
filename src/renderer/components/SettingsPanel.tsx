@@ -85,7 +85,9 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
             {/* About Section */}
             <section className="border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">About</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                About
+              </h3>
 
               <div className="space-y-3 text-sm text-gray-600">
                 <div className="flex items-center space-x-3">
@@ -97,7 +99,9 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                   <span>1.0.0-alpha</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="font-medium text-gray-700">Description:</span>
+                  <span className="font-medium text-gray-700">
+                    Description:
+                  </span>
                   <span>Universal File Converter</span>
                 </div>
                 <div className="flex items-start space-x-3">
@@ -105,7 +109,8 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                   <div className="flex-1">
                     <p>Video, Audio, Images, Documents</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      MP4, AVI, MKV, MP3, WAV, JPG, PNG, PDF, DOCX, XLSX, and more
+                      MP4, AVI, MKV, MP3, WAV, JPG, PNG, PDF, DOCX, XLSX, and
+                      more
                     </p>
                   </div>
                 </div>
@@ -121,8 +126,8 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600">
-                    Advanced settings like quality presets, bitrate options, and conversion
-                    parameters will be available in a future update.
+                    Advanced settings like quality presets, bitrate options, and
+                    conversion parameters will be available in a future update.
                   </p>
                 </div>
               </div>

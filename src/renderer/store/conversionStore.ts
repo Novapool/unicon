@@ -109,7 +109,8 @@ export const useConversionStore = create<ConversionState>((set, get) => ({
   removeFile: (fileId) => {
     set((state) => ({
       files: state.files.filter((f) => f.id !== fileId),
-      currentFileId: state.currentFileId === fileId ? null : state.currentFileId,
+      currentFileId:
+        state.currentFileId === fileId ? null : state.currentFileId,
     }));
   },
 
@@ -118,7 +119,7 @@ export const useConversionStore = create<ConversionState>((set, get) => ({
   updateFile: (fileId, updates) => {
     set((state) => ({
       files: state.files.map((f) =>
-        f.id === fileId ? { ...f, ...updates } : f
+        f.id === fileId ? { ...f, ...updates } : f,
       ),
     }));
   },
@@ -129,12 +130,16 @@ export const useConversionStore = create<ConversionState>((set, get) => ({
         f.id === fileId
           ? {
               ...f,
-              status: (progressUpdate.status || f.status) as ConversionFile['status'],
-              progress: progressUpdate.progress !== undefined ? progressUpdate.progress : f.progress,
+              status: (progressUpdate.status ||
+                f.status) as ConversionFile['status'],
+              progress:
+                progressUpdate.progress !== undefined
+                  ? progressUpdate.progress
+                  : f.progress,
               message: progressUpdate.message || f.message,
               error: progressUpdate.error || f.error,
             }
-          : f
+          : f,
       ),
     }));
   },

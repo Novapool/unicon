@@ -9,7 +9,7 @@ import ConversionQueue from './components/ConversionQueue';
 import SettingsPanel from './components/SettingsPanel';
 import './styles/global.css';
 
-const Home = () => {
+function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -46,7 +46,7 @@ const Home = () => {
         const result = await window.electron.batchConvert(
           inputFolder,
           outputFolder,
-          defaultOutputFormat
+          defaultOutputFormat,
         );
 
         if (result.success && result.jobId) {
@@ -84,7 +84,7 @@ const Home = () => {
             const result = await window.electron.convertFile(
               file.path,
               outputPath,
-              defaultOutputFormat
+              defaultOutputFormat,
             );
 
             if (result.success) {
@@ -128,7 +128,9 @@ const Home = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Unicon</h1>
-                <p className="text-xs text-gray-500">Universal File Converter</p>
+                <p className="text-xs text-gray-500">
+                  Universal File Converter
+                </p>
               </div>
             </div>
 
@@ -186,7 +188,7 @@ const Home = () => {
               >
                 {isConverting ? (
                   <span className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
                     <span>Converting...</span>
                   </span>
                 ) : (
@@ -219,8 +221,13 @@ const Home = () => {
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-700">
                     {!files.length && !inputFolder && '📁 Upload files first'}
-                    {(files.length > 0 || inputFolder) && !defaultOutputFormat && '🎯 Select output format'}
-                    {(files.length > 0 || inputFolder) && defaultOutputFormat && !outputFolder && '📂 Choose output location'}
+                    {(files.length > 0 || inputFolder) &&
+                      !defaultOutputFormat &&
+                      '🎯 Select output format'}
+                    {(files.length > 0 || inputFolder) &&
+                      defaultOutputFormat &&
+                      !outputFolder &&
+                      '📂 Choose output location'}
                   </p>
                 </div>
               )}
@@ -240,9 +247,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center text-sm text-gray-500">
             <p>© 2025 Unicon - Universal File Converter</p>
-            <p>
-              Supports: Video • Audio • Images • Documents
-            </p>
+            <p>Supports: Video • Audio • Images • Documents</p>
           </div>
         </div>
       </footer>
@@ -254,7 +259,7 @@ const Home = () => {
       />
     </div>
   );
-};
+}
 
 export default function App() {
   return (

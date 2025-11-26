@@ -39,7 +39,10 @@ export default function ConversionProgress() {
           if (status === 'completed' || status === 'failed') {
             updateFileProgress(currentFileId, {
               progress: status === 'completed' ? 100 : 0,
-              message: status === 'completed' ? 'Conversion complete!' : message || 'Conversion failed',
+              message:
+                status === 'completed'
+                  ? 'Conversion complete!'
+                  : message || 'Conversion failed',
             });
             setIsPolling(false);
             clearInterval(pollInterval);
@@ -63,7 +66,9 @@ export default function ConversionProgress() {
 
   return (
     <div className="card">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Conversion Progress</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">
+        Conversion Progress
+      </h2>
 
       <div className="space-y-4">
         <div>
@@ -92,15 +97,13 @@ export default function ConversionProgress() {
 
         {currentFile.message && (
           <div className="p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700">
-              {currentFile.message}
-            </p>
+            <p className="text-sm text-blue-700">{currentFile.message}</p>
           </div>
         )}
 
         {isPolling && (
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-600 border-t-transparent"></div>
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-600 border-t-transparent" />
             <span>Processing...</span>
           </div>
         )}

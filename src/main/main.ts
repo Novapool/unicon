@@ -12,12 +12,11 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
 import { spawn, ChildProcess } from 'child_process';
 import fs from 'fs';
 import axios from 'axios';
-
+import { resolveHtmlPath } from './util';
+import MenuBuilder from './menu';
 
 class AppUpdater {
   constructor() {
@@ -51,9 +50,17 @@ async function startPythonServer(): Promise<boolean> {
       if (app.isPackaged) {
         // Production: use bundled PyInstaller executable
         if (process.platform === 'win32') {
-          serverPath = getResourcePath('python', 'unicon-server', 'unicon-server.exe');
+          serverPath = getResourcePath(
+            'python',
+            'unicon-server',
+            'unicon-server.exe',
+          );
         } else {
-          serverPath = getResourcePath('python', 'unicon-server', 'unicon-server');
+          serverPath = getResourcePath(
+            'python',
+            'unicon-server',
+            'unicon-server',
+          );
         }
       } else {
         // Development: run Python script directly
@@ -63,7 +70,10 @@ async function startPythonServer(): Promise<boolean> {
       log.info(`Starting Python server from: ${serverPath}`);
 
       // Set FFmpeg path environment variable
-      const ffmpegPath = getResourcePath('ffmpeg', process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
+      const ffmpegPath = getResourcePath(
+        'ffmpeg',
+        process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg',
+      );
 
       const env = {
         ...process.env,
@@ -100,7 +110,9 @@ async function startPythonServer(): Promise<boolean> {
 
       const checkServer = setInterval(async () => {
         try {
-          const response = await axios.get(`${SERVER_URL}/health`, { timeout: 1000 });
+          const response = await axios.get(`${SERVER_URL}/health`, {
+            timeout: 1000,
+          });
           if (response.data.status === 'healthy') {
             clearInterval(checkServer);
             log.info('Python server is ready');
@@ -115,7 +127,6 @@ async function startPythonServer(): Promise<boolean> {
           }
         }
       }, 1000);
-
     } catch (error) {
       log.error('Error starting Python server:', error);
       resolve(false);
@@ -147,7 +158,7 @@ ipcMain.handle('ipc-example', async (event, arg) => {
 // IPC handler for opening file dialog
 ipcMain.handle('dialog:openFile', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
-    properties: ['openFile', 'multiSelections']
+    properties: ['openFile', 'multiSelections'],
   });
   if (canceled) {
     return { canceled, filePaths: [] };
@@ -158,7 +169,7 @@ ipcMain.handle('dialog:openFile', async () => {
 // IPC handler for opening folder dialog
 ipcMain.handle('dialog:openFolder', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
-    properties: ['openDirectory']
+    properties: ['openDirectory'],
   });
   if (canceled) {
     return { canceled, filePaths: [] };
@@ -169,7 +180,7 @@ ipcMain.handle('dialog:openFolder', async () => {
 // IPC handler for save file dialog
 ipcMain.handle('dialog:saveFile', async (event, defaultPath?: string) => {
   const { canceled, filePath } = await dialog.showSaveDialog({
-    defaultPath: defaultPath || 'converted_file'
+    defaultPath: defaultPath || 'converted_file',
   });
   if (canceled || !filePath) {
     return { canceled: true, filePath: null };
@@ -181,9 +192,24 @@ ipcMain.handle('dialog:saveFile', async (event, defaultPath?: string) => {
 ipcMain.handle('detect-file-type', async (event, filePath: string) => {
   try {
     const response = await axios.post(`${SERVER_URL}/detect-type`, {
-      file_path: filePath
+      file_path: filePath,
     });
-    return { success: true, data: response.data };
+
+    // Map backend response to fileType string
+    let fileType = 'application/octet-stream';
+    const { data } = response;
+
+    if (data.type === 'media') {
+      fileType = `${data.subtype}/unknown`;
+    } else if (data.type === 'document') {
+      fileType = `document/${data.subtype}`;
+    }
+
+    return {
+      success: true,
+      fileType,
+      data: response.data,
+    };
   } catch (error) {
     log.error('Error detecting file type:', error);
     return { success: false, error: 'Failed to detect file type' };
@@ -202,36 +228,54 @@ ipcMain.handle('get-formats', async () => {
 });
 
 // IPC handler for file conversion
-ipcMain.handle('convert-file', async (event, inputPath: string, outputPath: string, outputFormat: string) => {
-  try {
-    const response = await axios.post(`${SERVER_URL}/convert`, {
-      input_path: inputPath,
-      output_path: outputPath,
-      output_format: outputFormat
-    });
-    return { success: true, jobId: response.data.job_id };
-  } catch (error) {
-    log.error('Conversion error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return { success: false, error: errorMessage };
-  }
-});
+ipcMain.handle(
+  'convert-file',
+  async (
+    event,
+    inputPath: string,
+    outputPath: string,
+    outputFormat: string,
+  ) => {
+    try {
+      const response = await axios.post(`${SERVER_URL}/convert`, {
+        input_path: inputPath,
+        output_path: outputPath,
+        output_format: outputFormat,
+      });
+      return { success: true, jobId: response.data.job_id };
+    } catch (error) {
+      log.error('Conversion error:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unknown error occurred';
+      return { success: false, error: errorMessage };
+    }
+  },
+);
 
 // IPC handler for batch conversion
-ipcMain.handle('batch-convert', async (event, inputFolder: string, outputFolder: string, outputFormat: string) => {
-  try {
-    const response = await axios.post(`${SERVER_URL}/batch-convert`, {
-      input_folder: inputFolder,
-      output_folder: outputFolder,
-      output_format: outputFormat
-    });
-    return { success: true, jobId: response.data.job_id };
-  } catch (error) {
-    log.error('Batch conversion error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return { success: false, error: errorMessage };
-  }
-});
+ipcMain.handle(
+  'batch-convert',
+  async (
+    event,
+    inputFolder: string,
+    outputFolder: string,
+    outputFormat: string,
+  ) => {
+    try {
+      const response = await axios.post(`${SERVER_URL}/batch-convert`, {
+        input_folder: inputFolder,
+        output_folder: outputFolder,
+        output_format: outputFormat,
+      });
+      return { success: true, jobId: response.data.job_id };
+    } catch (error) {
+      log.error('Batch conversion error:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unknown error occurred';
+      return { success: false, error: errorMessage };
+    }
+  },
+);
 
 // IPC handler for getting job status
 ipcMain.handle('get-job-status', async (event, jobId: string) => {
@@ -268,8 +312,6 @@ const installExtensions = async () => {
     )
     .catch(console.log);
 };
-
-
 
 const createWindow = async () => {
   if (isDebug) {
@@ -357,10 +399,12 @@ app
     const serverStarted = await startPythonServer();
 
     if (!serverStarted) {
-      log.error('Failed to start Python server. Application may not function correctly.');
+      log.error(
+        'Failed to start Python server. Application may not function correctly.',
+      );
       dialog.showErrorBox(
         'Server Error',
-        'Failed to start the conversion server. Please check the logs and try again.'
+        'Failed to start the conversion server. Please check the logs and try again.',
       );
     }
 

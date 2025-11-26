@@ -1,7 +1,8 @@
 import { useConversionStore } from '../store/conversionStore';
 
 export default function OutputPathSelector() {
-  const { outputFolder, setOutputFolder, isBatchMode, files } = useConversionStore();
+  const { outputFolder, setOutputFolder, isBatchMode, files } =
+    useConversionStore();
 
   const handleBrowse = async () => {
     try {
@@ -17,8 +18,14 @@ export default function OutputPathSelector() {
         const result = await window.electron.saveFileDialog(defaultFileName);
         if (!result.canceled && result.filePath) {
           // Extract just the folder path
-          const folderPath = result.filePath.substring(0, result.filePath.lastIndexOf('/'));
-          setOutputFolder(folderPath || result.filePath.substring(0, result.filePath.lastIndexOf('\\')));
+          const folderPath = result.filePath.substring(
+            0,
+            result.filePath.lastIndexOf('/'),
+          );
+          setOutputFolder(
+            folderPath ||
+              result.filePath.substring(0, result.filePath.lastIndexOf('\\')),
+          );
         }
       }
     } catch (error) {
@@ -52,7 +59,9 @@ export default function OutputPathSelector() {
                 className="flex-1 truncate"
                 title={outputFolder || 'No location selected'}
               >
-                {outputFolder ? truncatePath(outputFolder) : 'No location selected'}
+                {outputFolder
+                  ? truncatePath(outputFolder)
+                  : 'No location selected'}
               </span>
             </div>
             {outputFolder && (
@@ -78,10 +87,7 @@ export default function OutputPathSelector() {
             )}
           </div>
 
-          <button
-            onClick={handleBrowse}
-            className="btn-primary"
-          >
+          <button onClick={handleBrowse} className="btn-primary">
             Browse
           </button>
         </div>

@@ -112,13 +112,13 @@ export interface ElectronAPI {
   convertFile: (
     inputPath: string,
     outputPath: string,
-    outputFormat: string
+    outputFormat: string,
   ) => Promise<ConversionResponse>;
 
   batchConvert: (
     inputFolder: string,
     outputFolder: string,
-    outputFormat: string
+    outputFormat: string,
   ) => Promise<ConversionResponse>;
 
   // Job status

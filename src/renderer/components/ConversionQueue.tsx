@@ -49,13 +49,15 @@ export default function ConversionQueue() {
     if (bytes === 0) return '—';
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+    return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
   };
 
   if (files.length === 0) {
     return (
       <div className="card">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Conversion Queue</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          Conversion Queue
+        </h2>
         <div className="text-center py-12">
           <svg
             className="w-24 h-24 mx-auto text-gray-300 mb-4"
@@ -71,7 +73,9 @@ export default function ConversionQueue() {
             />
           </svg>
           <p className="text-gray-500 text-lg">No files in queue</p>
-          <p className="text-gray-400 text-sm mt-2">Upload files to get started</p>
+          <p className="text-gray-400 text-sm mt-2">
+            Upload files to get started
+          </p>
         </div>
       </div>
     );
@@ -93,10 +97,7 @@ export default function ConversionQueue() {
             </button>
           )}
           {failedFiles.length > 0 && (
-            <button
-              onClick={clearFailedFiles}
-              className="btn-danger text-xs"
-            >
+            <button onClick={clearFailedFiles} className="btn-danger text-xs">
               Clear Failed
             </button>
           )}
@@ -107,7 +108,9 @@ export default function ConversionQueue() {
       {files.length > 1 && (
         <div className="mb-4 p-4 bg-gray-50 rounded-lg">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">Total Progress</span>
+            <span className="text-sm font-medium text-gray-700">
+              Total Progress
+            </span>
             <span className="text-sm font-semibold text-primary-600">
               {Math.round(totalProgress)}%
             </span>
@@ -160,7 +163,9 @@ export default function ConversionQueue() {
                       />
                     </div>
                     {file.message && (
-                      <p className="text-xs text-gray-600 mt-1">{file.message}</p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {file.message}
+                      </p>
                     )}
                   </div>
                 )}

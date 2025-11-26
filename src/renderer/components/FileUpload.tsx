@@ -15,26 +15,29 @@ export default function FileUpload() {
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
 
-    const files = Array.from(e.dataTransfer.files);
+      const files = Array.from(e.dataTransfer.files);
 
-    for (const file of files) {
-      try {
-        const fileType = await window.electron.detectFileType(file.path);
-        addFile({
-          name: file.name,
-          path: file.path,
-          type: fileType.fileType,
-          size: file.size,
-        });
-      } catch (error) {
-        console.error('Error detecting file type:', error);
+      for (const file of files) {
+        try {
+          const fileType = await window.electron.detectFileType(file.path);
+          addFile({
+            name: file.name,
+            path: file.path,
+            type: fileType.fileType,
+            size: file.size,
+          });
+        } catch (error) {
+          console.error('Error detecting file type:', error);
+        }
       }
-    }
-  }, [addFile]);
+    },
+    [addFile],
+  );
 
   const handleFileSelect = useCallback(async () => {
     try {
@@ -43,7 +46,10 @@ export default function FileUpload() {
         for (const filePath of result.filePaths) {
           try {
             const fileType = await window.electron.detectFileType(filePath);
-            const fileName = filePath.split('/').pop() || filePath.split('\\').pop() || 'Unknown';
+            const fileName =
+              filePath.split('/').pop() ||
+              filePath.split('\\').pop() ||
+              'Unknown';
             addFile({
               name: fileName,
               path: filePath,
@@ -80,9 +86,10 @@ export default function FileUpload() {
       <div
         className={`
           border-2 border-dashed rounded-lg p-12 text-center transition-all cursor-pointer
-          ${isDragging
-            ? 'border-primary-500 bg-primary-50'
-            : 'border-gray-300 hover:border-primary-400 bg-gray-50 hover:bg-gray-100'
+          ${
+            isDragging
+              ? 'border-primary-500 bg-primary-50'
+              : 'border-gray-300 hover:border-primary-400 bg-gray-50 hover:bg-gray-100'
           }
         `}
         onDragOver={handleDragOver}
@@ -122,10 +129,14 @@ export default function FileUpload() {
           <input
             type="checkbox"
             checked={isBatchMode}
-            onChange={(e) => useConversionStore.getState().toggleBatchMode(e.target.checked)}
+            onChange={(e) =>
+              useConversionStore.getState().toggleBatchMode(e.target.checked)
+            }
             className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
           />
-          <span className="text-sm text-gray-700">Batch Mode (Convert entire folder)</span>
+          <span className="text-sm text-gray-700">
+            Batch Mode (Convert entire folder)
+          </span>
         </label>
       </div>
     </div>
