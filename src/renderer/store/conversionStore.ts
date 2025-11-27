@@ -42,7 +42,6 @@ interface ConversionState {
 
   // Settings
   defaultOutputFormat: string;
-  defaultOutputFolder: string | null;
 
   // Actions
   setFormats: (formats: FormatsData) => void;
@@ -65,7 +64,6 @@ interface ConversionState {
   setBatchJobId: (jobId: string | null) => void;
 
   setDefaultOutputFormat: (format: string) => void;
-  setDefaultOutputFolder: (folder: string | null) => void;
 
   clearCompletedFiles: () => void;
   clearFailedFiles: () => void;
@@ -88,7 +86,6 @@ export const useConversionStore = create<ConversionState>((set, get) => ({
   outputFolder: null,
   batchJobId: null,
   defaultOutputFormat: 'mp4',
-  defaultOutputFolder: null,
 
   // Format actions
   setFormats: (formats) => set({ formats }),
@@ -156,7 +153,6 @@ export const useConversionStore = create<ConversionState>((set, get) => ({
 
   // Settings actions
   setDefaultOutputFormat: (format) => set({ defaultOutputFormat: format }),
-  setDefaultOutputFolder: (folder) => set({ defaultOutputFolder: folder }),
 
   // Clear completed/failed files
   clearCompletedFiles: () => {

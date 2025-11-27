@@ -3,7 +3,6 @@ import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import { useConversionStore } from './store/conversionStore';
 import FileUpload from './components/FileUpload';
 import FormatSelector from './components/FormatSelector';
-import OutputPathSelector from './components/OutputPathSelector';
 import ConversionProgress from './components/ConversionProgress';
 import ConversionQueue from './components/ConversionQueue';
 import SettingsPanel from './components/SettingsPanel';
@@ -22,40 +21,89 @@ function Home() {
     inputFolder,
     setCurrentFileId,
     updateFileProgress,
+    setOutputFolder,
   } = useConversionStore();
 
   const canConvert = () => {
     if (isBatchMode) {
-      return inputFolder && outputFolder && defaultOutputFormat;
+      return inputFolder && defaultOutputFormat;
     }
-    return files.length > 0 && outputFolder && defaultOutputFormat;
+    return files.length > 0 && defaultOutputFormat;
   };
 
   const handleConvert = async () => {
+    // Validation
     if (!canConvert()) {
-      setErrorMessage('Please select files, output location, and format');
+      setErrorMessage('Please select files and output format');
       return;
     }
 
-    setIsConverting(true);
     setErrorMessage(null);
 
     try {
-      if (isBatchMode && inputFolder && outputFolder) {
+      let selectedOutputPath: string | null = null;
+
+      // STEP 1: Open appropriate dialog to select output location
+      if (isBatchMode && inputFolder) {
+        // Batch mode: Select output folder
+        const result = await window.electron.openFolderDialog();
+        if (result.canceled) return; // User cancelled
+
+        selectedOutputPath = result.filePaths[0];
+        setOutputFolder(selectedOutputPath);
+
+      } else if (files.length > 0) {
+        // Single file mode
+        if (files.length === 1) {
+          // Single file: Use save dialog with suggested filename
+          const baseName = files[0].name.split('.')[0];
+          const suggestedName = `${baseName}.${defaultOutputFormat}`;
+
+          const result = await window.electron.saveFileDialog(suggestedName);
+          if (result.canceled || !result.filePath) return; // User cancelled
+
+          selectedOutputPath = result.filePath;
+
+        } else {
+          // Multiple files: Select output folder
+          const result = await window.electron.openFolderDialog();
+          if (result.canceled) return; // User cancelled
+
+          selectedOutputPath = result.filePaths[0];
+        }
+
+        // Store folder path
+        if (files.length > 1) {
+          setOutputFolder(selectedOutputPath);
+        } else {
+          // Extract directory from full path
+          const folderPath = selectedOutputPath!.substring(
+            0,
+            Math.max(
+              selectedOutputPath!.lastIndexOf('/'),
+              selectedOutputPath!.lastIndexOf('\\')
+            )
+          );
+          setOutputFolder(folderPath);
+        }
+      }
+
+      // STEP 2: Start conversion immediately
+      setIsConverting(true);
+
+      if (isBatchMode && inputFolder && selectedOutputPath) {
         // Batch conversion
         const result = await window.electron.batchConvert(
           inputFolder,
-          outputFolder,
+          selectedOutputPath,
           defaultOutputFormat,
         );
 
         if (result.success && result.jobId) {
-          // Set the current job ID for progress tracking
           setCurrentFileId(result.jobId);
-
-          // Mark all files as processing
           files.forEach((file) => {
             updateFileProgress(file.id, {
+              status: 'processing',
               progress: 0,
               message: 'Starting conversion...',
             });
@@ -63,23 +111,52 @@ function Home() {
         } else {
           setErrorMessage(result.message || 'Batch conversion failed');
         }
-      } else {
-        // Single file conversions
-        for (const file of files) {
-          if (file.status !== 'pending') continue;
 
-          // Update file status to processing
+      } else if (files.length > 0 && selectedOutputPath) {
+        // Single file conversions
+        if (files.length === 1) {
+          // Single file: Use exact output path
+          const file = files[0];
           updateFileProgress(file.id, {
+            status: 'processing',
             progress: 0,
             message: 'Starting conversion...',
           });
-
-          // Set as current file
           setCurrentFileId(file.id);
 
-          try {
-            // Construct output path
-            const outputPath = `${outputFolder}/${file.name.split('.')[0]}.${defaultOutputFormat}`;
+          const result = await window.electron.convertFile(
+            file.path,
+            selectedOutputPath,
+            defaultOutputFormat,
+          );
+
+          if (!result.success) {
+            updateFileProgress(file.id, {
+              status: 'failed',
+              progress: 0,
+              message: result.message || 'Conversion failed',
+              error: result.error,
+            });
+          }
+
+        } else {
+          // Multiple files: Generate unique filenames
+          for (const file of files) {
+            if (file.status !== 'pending') continue;
+
+            updateFileProgress(file.id, {
+              status: 'processing',
+              progress: 0,
+              message: 'Starting conversion...',
+            });
+            setCurrentFileId(file.id);
+
+            // Generate unique filename to prevent overwrites
+            const baseName = file.name.split('.')[0];
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substring(2, 6);
+            const outputFileName = `${baseName}_${timestamp}_${random}.${defaultOutputFormat}`;
+            const outputPath = `${selectedOutputPath}/${outputFileName}`;
 
             const result = await window.electron.convertFile(
               file.path,
@@ -87,27 +164,18 @@ function Home() {
               defaultOutputFormat,
             );
 
-            if (result.success) {
+            if (!result.success) {
               updateFileProgress(file.id, {
-                progress: 100,
-                message: 'Conversion complete!',
-              });
-            } else {
-              updateFileProgress(file.id, {
+                status: 'failed',
                 progress: 0,
                 message: result.message || 'Conversion failed',
+                error: result.error,
               });
             }
-          } catch (error) {
-            const errorMsg =
-              error instanceof Error ? error.message : 'Unknown error';
-            updateFileProgress(file.id, {
-              progress: 0,
-              message: `Error: ${errorMsg}`,
-            });
           }
         }
       }
+
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       setErrorMessage(`Conversion error: ${errorMsg}`);
@@ -170,7 +238,6 @@ function Home() {
           <div className="space-y-6">
             <FileUpload />
             <FormatSelector />
-            <OutputPathSelector />
 
             {/* Convert Button */}
             <div className="card">
@@ -224,10 +291,6 @@ function Home() {
                     {(files.length > 0 || inputFolder) &&
                       !defaultOutputFormat &&
                       '🎯 Select output format'}
-                    {(files.length > 0 || inputFolder) &&
-                      defaultOutputFormat &&
-                      !outputFolder &&
-                      '📂 Choose output location'}
                   </p>
                 </div>
               )}

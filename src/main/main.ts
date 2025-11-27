@@ -170,6 +170,8 @@ ipcMain.handle('dialog:openFile', async () => {
 ipcMain.handle('dialog:openFolder', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ['openDirectory'],
+    buttonLabel: 'Convert',
+    title: 'Select Output Folder',
   });
   if (canceled) {
     return { canceled, filePaths: [] };
@@ -181,6 +183,8 @@ ipcMain.handle('dialog:openFolder', async () => {
 ipcMain.handle('dialog:saveFile', async (event, defaultPath?: string) => {
   const { canceled, filePath } = await dialog.showSaveDialog({
     defaultPath: defaultPath || 'converted_file',
+    buttonLabel: 'Convert',
+    title: 'Select Output Location',
   });
   if (canceled || !filePath) {
     return { canceled: true, filePath: null };

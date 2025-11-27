@@ -27,23 +27,24 @@ export default function ConversionProgress() {
         const jobStatus = await window.electron.getJobStatus(currentFileId);
 
         if (jobStatus.success && jobStatus.job) {
-          const { status, progress, message } = jobStatus.job;
+          const { status, progress, message, error } = jobStatus.job;
 
-          // Update progress in store
+          // Map backend status to frontend status
+          const mappedStatus =
+            status === 'completed' ? 'completed' :
+            status === 'failed' ? 'failed' :
+            'processing';
+
+          // Update progress with proper status
           updateFileProgress(currentFileId, {
+            status: mappedStatus,
             progress: progress || 0,
             message: message || '',
+            error: error,
           });
 
-          // If job is completed or failed, stop polling
+          // Stop polling when done
           if (status === 'completed' || status === 'failed') {
-            updateFileProgress(currentFileId, {
-              progress: status === 'completed' ? 100 : 0,
-              message:
-                status === 'completed'
-                  ? 'Conversion complete!'
-                  : message || 'Conversion failed',
-            });
             setIsPolling(false);
             clearInterval(pollInterval);
           }
