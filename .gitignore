@@ -104,6 +104,7 @@ ai-digest-output/
 # Test ignores
 tests/
 tests/**/*
+conversion_test_suite/
 
 # Editor ignores
 .vscode/
